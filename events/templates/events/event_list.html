@@ -1,0 +1,14 @@
+{% extends "events/base.html" %}
+
+{% block content %}
+  {% for event in all_events_dtl %}
+    
+    <h2 class="date" >{{ event.event_date|date:"l jS F Y" }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
+    <a class="btn btn-default" href="{% url "event_booking" pk=event.pk attendance='bookinto'%}"><span>Click here to book into this event</span></a>
+    <a class="btn btn-default" href="{% url "event_booking" pk=event.pk attendance='leave' %}"><span>Click here to leave this event</span></a></h2>
+    <h2 class="item">{{ event.event_details|linebreaks }}</h2>
+    <h2 class="attendees-title">Attendees</h2>
+    <h2 class="attendees">{{ event.attendees.all|cut:"<User:"|cut:">"|cut:"["|cut:"]"|linebreaks }}</h2>
+    <hr>
+  {% endfor %}
+{% endblock content %}
