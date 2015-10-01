@@ -6,7 +6,7 @@ from .models                        import Event
 
 def event_list(request):
     all_events = Event.objects.order_by('event_date')
-    return render(request, 'events/event_list.html', {'all_events_dtl': all_events})
+    return render(request, 'events_app_b/event_list.html', {'all_events_dtl': all_events})
 
 @login_required
 def event_booking(request, pk, attendance):
@@ -18,5 +18,5 @@ def event_booking(request, pk, attendance):
         event.attendees.remove(updated_attendee)
     event.author = request.user
     event.save()
-    return redirect('events.views.event_list')
+    return redirect('events_app_b.views.event_list')
 

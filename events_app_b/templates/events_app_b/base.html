@@ -4,7 +4,7 @@
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
   <link href="http://fonts.googleapis.com/css?family=Lobster&subset=latin,latin-ext" rel="stylesheet" type="text/css">
-  <link rel="stylesheet" href="{% static "css/events.css" %}">
+  <link rel="stylesheet" href="{% static "css/events_app_b.css" %}">
   <style>
 
      h1,  h1 a,  h1 a:visited,  h1 a:active {
@@ -118,7 +118,7 @@
      {% else %}
         <a href="{% url 'django.contrib.auth.views.login' %}" class="top-menu"><span class="glyphicon glyphicon-lock"></span></a>
     {% endif %}
-    <h1><a href="{% url 'events.views.event_list' %}">Harrow Coffee Pot programme</a></h1>
+    <h1><a href="{% url 'events_app_b.views.event_list' %}">Harrow Coffee Pot programme</a></h1>
     <hr>
       {% block content %}
       {% endblock %}
