@@ -6,7 +6,16 @@ from .models                        import Event
 
 def event_list(request):
     all_events = Event.objects.order_by('event_date')
-    return render(request, 'events_app_b/event_list.html', {'all_events_dtl': all_events})
+    all_events_with_attendees = []
+    for event in all_events:
+        attendees_as_full_names = []
+        for attendee in event.attendees.all():
+            attendees_as_full_names.append(attendee.first_name)
+        attendees_as_full_names_as_string = ', '.join(attendees_as_full_names)
+        event_with_attendees_as_full_names = {"event":event, "attendees":attendees_as_full_names_as_string}
+        all_events_with_attendees.append(event_with_attendees_as_full_names)
+    return render(request, 'events_app_b/event_list.html', {'all_events_dtl': all_events_with_attendees})
+
 
 @login_required
 def event_booking(request, pk, attendance):
