@@ -65,11 +65,13 @@
     {% if user.is_authenticated %}
         <p class="top-menu"><small>(<a href="{% url 'django.contrib.auth.views.logout' %}">Log out</a>)</small></p>
      {% else %}
-        <a href="{% url 'django.contrib.auth.views.login' %}" class="top-menu"><span class="glyphicon glyphicon-lock"></span></a>
+        <p class="top-menu"><small>(<a href="{% url 'django.contrib.auth.views.login' %}">Log in</a>)</small></p>
     {% endif %}
-    <h1><a href="{% url 'events_app_b.views.event_list' %}">Harrow Coffee Pot programme</a></h1>
+    <h1>Harrow Coffee Pot programme</h1>
     <hr>
       {% block content %}
       {% endblock %}
 </body>
 </html>
+{#    <h1><a href="{% url 'events_app_b.views.event_list' %}">Harrow Coffee Pot programme</a></h1> #}
+ {#         <a href="{% url 'django.contrib.auth.views.login' %}" class="top-menu"><span class="glyphicon glyphicon-lock"></span></a>#}
