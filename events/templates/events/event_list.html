@@ -1,0 +1,19 @@
+{% extends "mysite/base.html" %}
+
+{% block content %}
+  {% for x in all_events_dtl %}
+    <h2>{{ x.event.e_date|date:"l jS F Y" }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
+
+    <a class="btn btn-default" href="{% url "event_booking" pk=x.event.pk attendance='bookinto'%}">
+    <span>Click here to book into this event</span></a>
+
+    <a class="btn btn-default" href="{% url "event_booking" pk=x.event.pk attendance='leave' %}">
+    <span>Click here to leave this event</span></a></h2>
+
+    <h2 class="item">{{ x.event.detail_public|linebreaks }}</h2>
+
+    <h2>Attendees</h2>
+    <h2 class="attendees">{{ x.attendees }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
+    <h2>_________________________</h2>
+  {% endfor %}
+{% endblock content %}

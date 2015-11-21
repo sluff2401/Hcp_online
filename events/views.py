@@ -2,10 +2,10 @@ from django.shortcuts               import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models     import User
 
-from .models                        import Event
+from .models                        import Z
 
 def event_list(request):
-    all_events = Event.objects.order_by('event_date')
+    all_events = Z.objects.order_by('e_date')
     all_events_with_attendees = []
     for event in all_events:
         attendees_as_full_names = []
@@ -14,12 +14,12 @@ def event_list(request):
         attendees_as_full_names_as_string = ', '.join(attendees_as_full_names)
         event_with_attendees_as_full_names = {"event":event, "attendees":attendees_as_full_names_as_string}
         all_events_with_attendees.append(event_with_attendees_as_full_names)
-    return render(request, 'events_app_b/event_list.html', {'all_events_dtl': all_events_with_attendees})
+    return render(request, 'events/event_list.html', {'all_events_dtl': all_events_with_attendees})
 
 
 @login_required
 def event_booking(request, pk, attendance):
-    event = get_object_or_404(Event, pk=pk)
+    event = get_object_or_404(Z, pk=pk)
     updated_attendee = User.objects.get(username = request.user)
     if attendance == 'bookinto':
         event.attendees.add(updated_attendee)
@@ -27,5 +27,5 @@ def event_booking(request, pk, attendance):
         event.attendees.remove(updated_attendee)
     event.author = request.user
     event.save()
-    return redirect('events_app_b.views.event_list')
+    return redirect('events.views.event_list')
 

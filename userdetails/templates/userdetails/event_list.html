@@ -1,4 +1,4 @@
-{% extends "events_app_b/base.html" %}
+{% extends "mysite/base.html" %}
 
 {% block content %}
   {% for event_and_attendees in all_events_dtl %}
@@ -10,7 +10,7 @@
     <a class="btn btn-default" href="{% url "event_booking" pk=event_and_attendees.event.pk attendance='leave' %}">
     <span>Click here to leave this event</span></a></h2>
 
-    <h2 class="item">{{ event_and_attendees.event.event_details|linebreaks }}</h2>
+    <h2 class="item">{{ event_and_attendees.event.event_detail_public|linebreaks }}</h2>
 
     <h2>Attendees</h2>
     <h2 class="attendees">{{ event_and_attendees.attendees }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
