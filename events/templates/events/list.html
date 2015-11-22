@@ -1,14 +1,26 @@
 {% extends "mysite/base.html" %}
 
 {% block content %}
-  {% for x in all_events_dtl %}
-    <h2>{{ x.event.e_date|date:"l jS F Y" }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
+  {% for x in events %}
+    <h2>
+    {{ x.event.e_date|date:"l jS F Y" }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
 
-    <a class="btn btn-default" href="{% url "booking" pk=x.event.pk attendance='bookinto'%}">
-    <span>Click here to book into this event</span></a>
-
-    <a class="btn btn-default" href="{% url "booking" pk=x.event.pk attendance='leave' %}">
-    <span>Click here to leave this event</span></a></h2>
+    {% if x.editable = True %}
+      <a class="btn btn-default" href="{% url "booking" pk=x.event.pk attendance='bookinto'%}">
+      <span>Book into this event</span></a>
+      <a class="btn btn-default" href="{% url "booking" pk=x.event.pk attendance='leave' %}">
+      <span>Leave this event</span></a>
+      <a class="btn btn-default" href="{% url "update" pk=x.event.pk period=period %}">
+      <span>Change this event</span></a>
+      <a class="btn btn-default" href="{% url "remove" pk=x.event.pk period=period %}">
+      <span>Remove this event</span></a>
+    {% else %}
+      <a class="btn btn-default" href="{% url "booking" pk=x.event.pk attendance='bookinto'%}">
+      <span>Click here to book into this event</span></a>
+      <a class="btn btn-default" href="{% url "booking" pk=x.event.pk attendance='leave' %}">
+      <span>Click here to leave this event</span></a>
+    {% endif %}
+    </h2>
 
     <h2 class="item">{{ x.event.detail_public|linebreaks }}</h2>
 
@@ -17,3 +29,5 @@
     <h2>_________________________</h2>
   {% endfor %}
 {% endblock content %}
+    {% comment %}
+    {% endcomment %}

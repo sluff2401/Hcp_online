@@ -9,7 +9,47 @@ from .forms                         import EForm
 #from userdetails.forms              import UForm
 
 def list(request):
-    all_events = E.objects.filter(is_live=True).order_by('e_date')
+    eventxs = E.objects.filter(is_live=True, e_date__gte=timezone.now()).order_by('e_date')
+    events                                  = []
+
+    if request.user.is_authenticated():
+        user                                = User.objects.get(id=request.user.id)
+        is_authenticated                    = True
+    else:
+        is_authenticated                    = False
+
+    events_all = []
+    for eventx in eventxs:
+        attendees_list = []
+        for attendee in eventx.attendees.all():
+            attendees_list.append(attendee.first_name)
+        attendees_string   = ', '.join(attendees_list)
+
+        if is_authenticated                     == False:
+            editable                            =  False
+            private_viewable                    =  False
+        else:
+            if user.is_superuser                == True:
+                editable                        =  True
+            elif eventx.author                  ==  user:
+                editable                        =  True
+            elif user.userdetail.may_edit_any_event  == True:
+                editable                        =  True
+            else:
+                editable                        =  False
+            private_viewable                    =  True
+
+        event_all = {"event":eventx, "attendees":attendees_string, 'editable':editable, 'private_viewable':private_viewable}
+        events_all.append(event_all)
+
+
+    return render(request, 'events/list.html', {'events': events_all, 'period':'1'})
+
+
+    '''
+    #all_events = E.objects.filter(is_live=True).order_by('e_date')
+    all_events = E.objects.filter(e_date__gte=timezone.now()).order_by('e_date')
+
     all_events_with_attendees = []
     for event in all_events:
         attendees_as_full_names = []
@@ -18,7 +58,8 @@ def list(request):
         attendees_as_full_names_as_string = ', '.join(attendees_as_full_names)
         event_with_attendees_as_full_names = {"event":event, "attendees":attendees_as_full_names_as_string}
         all_events_with_attendees.append(event_with_attendees_as_full_names)
-    return render(request, 'events/list.html', {'all_events_dtl': all_events_with_attendees})
+    return render(request, 'events/list.html', {'events': all_events_with_attendees})
+    '''
 
 
 @login_required
@@ -63,7 +104,7 @@ def insert(request):
 
 
 @login_required
-def update(request, pk):
+def update(request, pk, period):
   event                          = get_object_or_404(E, pk=pk)
   if request.method                      == "POST":
     form = EForm(request.POST, instance=event)
@@ -94,8 +135,8 @@ def update(request, pk):
   return render(request, 'events/insert_update.html', {'form': form})
 
 @login_required
-def remove(request, pk):
-  event = get_object_or_404(E, pk=pk, period='1')
+def remove(request, pk, period):
+  event                              =      get_object_or_404(E, pk=pk)
 
   user                               = User.objects.get(id=request.user.id)
 
