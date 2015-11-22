@@ -4,6 +4,10 @@ from django.conf.urls        import url
 from .                       import views
 
 urlpatterns = [
-    url(r'^$',                                  views.event_list,       name='event_list'),
-    url(r'^event/(?P<pk>[0-9]+)/(?P<attendance>[a-z]+)/$',    views.event_booking,  name='event_booking'),
-] 
+    url(r'^$',                                                views.list,                  name='list'),
+    #url(r'^past$',                                           views.list_past,             name='list_past'),
+    url(r'^event/insert/$',                                   views.insert,                name='insert'),
+    url(r'^event/(?P<pk>[0-9]+)/(?P<attendance>[a-z]+)/$',    views.booking,               name='booking'),
+    url(r'^event/(?P<pk>[0-9]+)/update/$',                    views.update,                name='update'),
+    url(r'^event/(?P<pk>[0-9]+)/remove/$',                    views.remove,                name='remove'),
+]
