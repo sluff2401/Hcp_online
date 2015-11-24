@@ -8,15 +8,29 @@ from .forms                         import EForm
 #from userdetails.models             import U
 #from userdetails.forms              import UForm
 
-def list(request):
-    eventxs = E.objects.filter(is_live=True, e_date__gte=timezone.now()).order_by('e_date')
+def event_list(request, period='current'):
+    if period == 'current':
+      eventxs = E.objects.filter(is_live=True, e_date__gte=timezone.now()).order_by('e_date')
+    elif period == 'past':
+      eventxs = E.objects.filter(is_live=True, e_date__lt=timezone.now()).order_by('-e_date')
+    elif period == 'trash':
+      eventxs = E.objects.filter(is_live=False)
+    else:
+      eventxs = E.objects.all().order_by('e_date')
     events                                  = []
 
     if request.user.is_authenticated():
-        user                                = User.objects.get(id=request.user.id)
-        is_authenticated                    = True
+        user                                     =  User.objects.get(id=request.user.id)
+        is_authenticated                         =  True
+        if user.is_superuser                     == True:
+            addable                              =  True
+        elif user.userdetail.may_edit_any_event  == True:
+            addable                              =  True
+        else:
+            addable                              =  False
     else:
-        is_authenticated                    = False
+        is_authenticated                         =  False
+        addable                                  =  False
 
     events_all = []
     for eventx in eventxs:
@@ -25,16 +39,16 @@ def list(request):
             attendees_list.append(attendee.first_name)
         attendees_string   = ', '.join(attendees_list)
 
-        if is_authenticated                     == False:
-            editable                            =  False
-            private_viewable                    =  False
+        if is_authenticated                          ==  False:
+            editable                                 =   False
+            private_viewable                         =   False
         else:
-            if user.is_superuser                == True:
-                editable                        =  True
-            elif eventx.author                  ==  user:
-                editable                        =  True
-            elif user.userdetail.may_edit_any_event  == True:
-                editable                        =  True
+            if user.is_superuser                     ==  True:
+                editable                             =   True
+            elif eventx.author                       ==  user:
+                editable                             =   True
+            elif user.userdetail.may_edit_any_event  ==  True:
+                editable                             =   True
             else:
                 editable                        =  False
             private_viewable                    =  True
@@ -43,7 +57,11 @@ def list(request):
         events_all.append(event_all)
 
 
-    return render(request, 'events/list.html', {'events': events_all, 'period':'1'})
+    return render(request, 'events/list.html', {'events': events_all, 'period':period, 'addable': addable})
+
+
+
+
 
 
     '''
@@ -72,7 +90,7 @@ def booking(request, pk, attendance):
         event.attendees.remove(updated_attendee)
     event.author = request.user
     event.save()
-    return redirect('events.views.list')
+    return redirect('events.views.event_list')
 
 @login_required
 def insert(request):
@@ -97,7 +115,7 @@ def insert(request):
       event.author                            = user
       event.save()
 
-      return redirect('events.views.list')
+      return redirect('events.views.event_list')
   else:
     form = EForm()
   return render(request, 'events/insert_update.html', {'form': form})
@@ -126,10 +144,13 @@ def update(request, pk, period):
       event.author                            = user
       event.save()
 
+      return redirect('events.views.event_list', period)
+
+
       if event.e_date                         < timezone.localtime(timezone.now()).date():
-        return redirect('events.views.list_past')
+        return redirect('/events.views.event_list', period)
       else:
-        return redirect('events.views.list')
+        return redirect('/events.views.event_list', period)
   else:
     form = EForm(instance=event)
   return render(request, 'events/insert_update.html', {'form': form})
@@ -148,9 +169,9 @@ def remove(request, pk, period):
     pass
   else:
     if event.e_date                         < timezone.localtime(timezone.now()).date():
-      return redirect('events.views.list_past')
+      return redirect('events.views.past')
     else:
-      return redirect('events.views.list')
+      return redirect('events.views.event_list')
 
   event.author_name                       = user.username
   event.author                            = user
@@ -158,6 +179,6 @@ def remove(request, pk, period):
   event.save()
   #event.delete()
   if event.e_date                         < timezone.localtime(timezone.now()).date():
-    return redirect('events.views.list_past')
+    return redirect('events.views.past')
   else:
-    return redirect('events.views.list')
+    return redirect('events.views.event_list')
