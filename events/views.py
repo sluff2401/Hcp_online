@@ -5,95 +5,71 @@ from django.contrib.auth.models     import User
 
 from .models                        import E
 from .forms                         import EForm
-#from userdetails.models             import U
-#from userdetails.forms              import UForm
+from userdetails.models             import Z
 
-def event_list(request, period='current'):
-    if period == 'current':
-      eventxs = E.objects.filter(is_live=True, e_date__gte=timezone.now()).order_by('e_date')
-    elif period == 'past':
-      eventxs = E.objects.filter(is_live=True, e_date__lt=timezone.now()).order_by('-e_date')
-    elif period == 'trash':
-      eventxs = E.objects.filter(is_live=False)
+def event_list(request, periodsought='current'):
+    if periodsought == 'current':
+        events = E.objects.filter(is_live=True, e_date__gte=timezone.now()).order_by('e_date')
     else:
-      eventxs = E.objects.all().order_by('e_date')
-    events                                  = []
+        events = E.objects.exclude(is_live=True, e_date__gte=timezone.now()).order_by('-e_date')
 
     if request.user.is_authenticated():
         user                                     =  User.objects.get(id=request.user.id)
         is_authenticated                         =  True
-        if user.is_superuser                     == True:
-            addable                              =  True
-        elif user.userdetail.may_edit_any_event  == True:
-            addable                              =  True
+        if user.z.may_post_event                 == True:
+            user_can_post_events                 =  True
         else:
-            addable                              =  False
+            user_can_post_events                 =  False  
+        if user.z.may_edit_any_event             == True:
+            user_can_edit_any_event              =  True
+        else:
+            user_can_edit_any_event              =  False  
+        if user.z.may_add_user                   == True:
+            user_can_add_users                   =  True
+        else:
+            user_can_add_users                   =  False
     else:
         is_authenticated                         =  False
-        addable                                  =  False
-
-    events_all = []
-    for eventx in eventxs:
+        user_can_post_events                     =  False
+        user_can_edit_any_event                  =  False  
+        user_can_add_users                       =  False
+       
+    events_augmented = []
+    for event in events:
         attendees_list = []
-        for attendee in eventx.attendees.all():
+        for attendee in event.attendees.all():
             attendees_list.append(attendee.first_name)
         attendees_string   = ', '.join(attendees_list)
 
-        if is_authenticated                          ==  False:
-            editable                                 =   False
-            private_viewable                         =   False
+        if is_authenticated                      ==  False:
+            user_can_edit_this_event             =   False
         else:
-            if user.is_superuser                     ==  True:
-                editable                             =   True
-            elif eventx.author                       ==  user:
-                editable                             =   True
-            elif user.userdetail.may_edit_any_event  ==  True:
-                editable                             =   True
+            if user_can_edit_any_event           ==  True:
+                user_can_edit_this_event         =   True
+            elif event.author                    ==  user:
+                user_can_edit_this_event         =   True
             else:
-                editable                        =  False
-            private_viewable                    =  True
-
-        event_all = {"event":eventx, "attendees":attendees_string, 'editable':editable, 'private_viewable':private_viewable}
-        events_all.append(event_all)
-
-
-    return render(request, 'events/list.html', {'events': events_all, 'period':period, 'addable': addable})
-
-
+                user_can_edit_this_event         =   False
+             
+        if event.e_date                          <  timezone.localtime(timezone.now()).date():
+          event_status_now                       =  'past'
+        elif event.is_live                       == True:
+          event_status_now                       =  'live'
+        else:
+          event_status_now                       = 'deletednonpast'
 
 
+        event_augmented = {"event":event, "attendees":attendees_string, 'user_can_edit_this_event':user_can_edit_this_event,                   'event_status_now': event_status_now}
+        events_augmented.append(event_augmented)
 
 
-    '''
-    #all_events = E.objects.filter(is_live=True).order_by('e_date')
-    all_events = E.objects.filter(e_date__gte=timezone.now()).order_by('e_date')
+    return render(request, 'events/list.html', {'events': events_augmented, 'periodsought':periodsought, 'user_can_post_events': user_can_post_events, 'is_authenticated':is_authenticated, 'user_can_add_users': user_can_add_users, 'user_can_edit_any_event': user_can_edit_any_event})
+   
 
-    all_events_with_attendees = []
-    for event in all_events:
-        attendees_as_full_names = []
-        for attendee in event.attendees.all():
-            attendees_as_full_names.append(attendee.first_name)
-        attendees_as_full_names_as_string = ', '.join(attendees_as_full_names)
-        event_with_attendees_as_full_names = {"event":event, "attendees":attendees_as_full_names_as_string}
-        all_events_with_attendees.append(event_with_attendees_as_full_names)
-    return render(request, 'events/list.html', {'events': all_events_with_attendees})
-    '''
 
 
 @login_required
-def booking(request, pk, attendance):
-    event = get_object_or_404(E, pk=pk)
-    updated_attendee = User.objects.get(username = request.user)
-    if attendance == 'bookinto':
-        event.attendees.add(updated_attendee)
-    else:
-        event.attendees.remove(updated_attendee)
-    event.author = request.user
-    event.save()
-    return redirect('events.views.event_list')
-
-@login_required
-def insert(request):
+def insertuser(request):
   if request.method                           == "POST":
     form                                      = EForm(request.POST)
     if form.is_valid():
@@ -104,12 +80,10 @@ def insert(request):
 
       if user.is_superuser                    == True:
         pass
-      elif user.userdetail.may_edit_eny_event == True:
-        pass
-      elif event.author                       == user:
+      elif user.z.may_add_user == True:
         pass
       else:
-        return render(request, 'events/insert_update.html', {'form': form})
+        return render(request, 'events/insert_update_user.html', {'form': form})
 
       event.author_name                       = user.username
       event.author                            = user
@@ -118,67 +92,108 @@ def insert(request):
       return redirect('events.views.event_list')
   else:
     form = EForm()
-  return render(request, 'events/insert_update.html', {'form': form})
-
+  return render(request, 'events/insert_update_user.html', {'form': form})
 
 @login_required
-def update(request, pk, period):
-  event                          = get_object_or_404(E, pk=pk)
-  if request.method                      == "POST":
-    form = EForm(request.POST, instance=event)
+def event_process(request, pk='0', function="update"):
+  if function                                 == 'insert':
+    pass
+  else:
+    event                                     = get_object_or_404(E, pk=pk)                                         
+                                              # i.e. function in ['detail', 'update', 'repeat', 
+                                              #'restore', 'bookinto', 'leave', 'delete', 'deleteperm']
+    
+  if request.method                           == "POST":                       # i.e. have arrived here from 'events/insert_update.html'
+    if function                               == 'insert':
+      form                                    = EForm(request.POST)
+    elif function                             == 'repeat':
+      form                                    = EForm(request.POST)
+      form_original                           = EForm(request.POST, instance=event)
+      if form_original.is_valid():
+        event_original                        = form_original.save(commit=False)
+    else:   
+      form                                    = EForm(request.POST, instance=event)
+                                                 # i.e. function == 'update'
+                                                 # function in ['detail', 'restore','bookinto', 'leave', 'delete', 'deleteperm'] don't go here
+   
+    
     if form.is_valid():
       event                                   = form.save(commit=False)
+      if event.e_date                         < timezone.localtime(timezone.now()).date():
+        error_message                         = 'event date cannot be in the past, please enter a valid date'
+        return render(request, 'events/insert_update.html', {'form': form, 'error_message': error_message}) 
+                                              # events cannot be posted for dates in past
+      else:
+        periodsought                          = 'current'
 
       user                                    = User.objects.get(id=request.user.id)
 
-      if user.is_superuser                    == True:
-        pass
-      elif user.userdetail.may_edit_eny_event == True:
-        pass
-      elif event.author                       == user:
-        pass
-      else:
-        return render(request, 'events/insert_update.html', {'form': form})
+      if function                             == 'insert':
+        event.author_name                     = user.username
+        event.author                          = user
+        if user.z.may_post_event              == True:
+          pass
+        else:                                                                 # user is not authorized to insert event                      
+          return render(request, 'events/insert_update.html', {'form': form})
+      elif function                           == 'update':
+        if user.z.may_edit_any_event          == True:
+          pass
+        elif event.author                     == user:
+          pass
+        else:   
+          return render(request, 'events/insert_update.html', {'form': form})
+      else:                                                                      # i.e. function == 'repeat'
+        event.author_name                     = user.username
+        event.author                          = user                                                           
+        if user.z.may_edit_any_event          == True:
+          pass
+        elif event_original.author            == user:
+          pass
+        else:                                                                              # user is not authorized to edit this event
+          return render(request, 'events/insert_update.html', {'form': form_original})
 
-      event.author_name                       = user.username
-      event.author                            = user
       event.save()
 
-      return redirect('events.views.event_list', period)
+      return redirect('events.views.event_list', periodsought)
 
+    else:                                                                                  # i.e. form is not valid, ask user to resubmit it
+      return render(request, 'events/insert_update.html', {'form': form})   
 
+  else:                                                                                                       # i.e. request.method == "GET":
+    if function                               in ['delete', 'deleteperm', 'bookinto', 'leave', 'restore', ]:  
       if event.e_date                         < timezone.localtime(timezone.now()).date():
-        return redirect('/events.views.event_list', period)
+        # decide which period of events to display afterwards
+        periodsought                          = 'notcurrent'
       else:
-        return redirect('/events.views.event_list', period)
-  else:
-    form = EForm(instance=event)
-  return render(request, 'events/insert_update.html', {'form': form})
+        periodsought                          = 'current'
+      if function                             == 'delete':
+        event.is_live                         = False
+        event.save()
+        return redirect('events.views.event_list', periodsought)
+      elif function                           == 'deleteperm':
+        event.delete()
+        return redirect('events.views.event_list', periodsought)
+      elif function                           == 'bookinto':
+        updated_attendee = User.objects.get(username = request.user)
+        event.attendees.add(updated_attendee)
+        event.save()
+        return redirect('events.views.event_list', periodsought)
+      elif function                           == 'leave':
+        updated_attendee = User.objects.get(username = request.user)
+        event.attendees.remove(updated_attendee)
+        event.save()
+        return redirect('events.views.event_list', periodsought)
+      else:                                                                                 # i.e. function == 'restore'
+        event.is_live                         = True
+        event.save()
+        return redirect('events.views.event_list', periodsought)
+    elif function                             == 'detail':
+        return render(request, 'diaryandcontacts/event_detail.html', {'event': item})       # no data input, just buttons
+    elif function                             == 'insert':
+      form = EForm()
+      return render(request, 'events/insert_update.html', {'form': form})                   # ask user for event details
+    else:                                                                                   # i.e. function in ['update','repeat']             
+      form = EForm(instance=event)
+      return render(request, 'events/insert_update.html', {'form': form})                   # ask user for event details
 
-@login_required
-def remove(request, pk, period):
-  event                              =      get_object_or_404(E, pk=pk)
 
-  user                               = User.objects.get(id=request.user.id)
-
-  if user.is_superuser               == True:
-    pass
-  elif user.userdetail.may_edit_eny_event == True:
-    pass
-  elif event.author                  == user:
-    pass
-  else:
-    if event.e_date                         < timezone.localtime(timezone.now()).date():
-      return redirect('events.views.past')
-    else:
-      return redirect('events.views.event_list')
-
-  event.author_name                       = user.username
-  event.author                            = user
-  event.is_live                           = False
-  event.save()
-  #event.delete()
-  if event.e_date                         < timezone.localtime(timezone.now()).date():
-    return redirect('events.views.past')
-  else:
-    return redirect('events.views.event_list')

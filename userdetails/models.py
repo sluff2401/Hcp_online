@@ -7,6 +7,7 @@ class Z(models.Model):
   user                    = models.OneToOneField('auth.User')
   may_post_event          = models.BooleanField(default=False)
   may_edit_any_event      = models.BooleanField(default=False)
+  may_add_user            = models.BooleanField(default=False)
   notes                   = models.TextField(blank=True,null=True)
   created_date            = models.DateTimeField(default=timezone.now)
   def __str__(self):
