@@ -16,18 +16,21 @@ def event_list(request, periodsought='current'):
     if request.user.is_authenticated():
         user                                     =  User.objects.get(id=request.user.id)
         is_authenticated                         =  True
-        if user.z.may_post_event                 == True:
-            user_can_post_events                 =  True
-        else:
-            user_can_post_events                 =  False
-        if user.z.may_edit_any_event             == True:
-            user_can_edit_any_event              =  True
-        else:
-            user_can_edit_any_event              =  False
-        #if user.z.may_add_user                   == True:
-           # user_can_add_users                   =  True
-        #else:
-            #user_can_add_users                   =  False
+
+        try:
+            if user.z.may_post_event                 == True:
+                user_can_post_events                 =  True
+            else:
+                user_can_post_events                 =  False
+            if user.z.may_edit_any_event             == True:
+                user_can_edit_any_event              =  True
+                user_can_post_events                 =  True
+            else:
+                user_can_edit_any_event              =  False
+        except:
+                user_can_edit_any_event              =  False
+                user_can_post_events                 =  False
+
     else:
         is_authenticated                         =  False
         user_can_post_events                     =  False
